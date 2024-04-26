@@ -1,21 +1,17 @@
-import requests
+import pandas as pd
+import pymongo
+import json
 
-params = {
-  'access_key': '1e03c122a149ae84936ae0479d8d0c42'
-}
+def load_data_to_mongodb(input_file):
+    client = pymongo.MongoClient("mongodb://localhost:27017/")
+    db = client["DAP"]
+    with open(input_file, 'r') as file:
+        json_data = json.load(file)
+    collection = db["files"]
+    for doc in json_data:
+        collection.insert_one(doc)
+    client.close()
 
-api_result = requests.get('https://api.aviationstack.com/v1/flights', params)
-
-api_response = api_result.json()
-
-print(api_response)
-
-for flight in api_response['results']:
-    if (flight['live']['is_ground'] is False):
-        print(u'%s flight %s from %s (%s) to %s (%s) is in the air.' % (
-            flight['airline']['name'],
-            flight['flight']['iata'],
-            flight['departure']['airport'],
-            flight['departure']['iata'],
-            flight['arrival']['airport'],
-            flight['arrival']['iata']))
+if __name__ == "__main__":
+    input_file = "HPI_master.json"
+    load_data_to_mongodb(input_file)
