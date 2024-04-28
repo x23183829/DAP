@@ -28,18 +28,34 @@ def load_data_from_mongodb(uri, db_name, collection_name):
     return df
 
 def clean_data(df):
-    df.drop(columns=['index_sa'], inplace=True)
+    df.drop(columns=['index_sa','_id'], inplace=True)
     # df.drop_duplicates(inplace=True)
     # df.dropna(inplace=True)
-    df.rename(columns={'period': 'months'}, inplace=True)
+    df.rename(columns={'period': 'months','yr': 'year'}, inplace=True)
     return df
+
+def transform_df(df):
+    y_df = df.groupby('year')['index_nsa'].mean().reset_index()
+    m_df = df.groupby('months')['index_nsa'].mean().reset_index()
+    return y_df, m_df
 
 
 if __name__ == "__main__":
     input_file = "HPI_master.json"
     #load_data_to_mongodb(input_file, MONGODB_URI, DB_NAME, COLLECTION_NAME)
     df = load_data_from_mongodb(MONGODB_URI, DB_NAME, COLLECTION_NAME)
+    print(df.columns)
     df = clean_data(df)
+    print(df.columns)
+    for column_name in df.columns:
+        unique_values = df[column_name].unique()
+        print(f"Unique values in column '{column_name}':")
+        print(unique_values)
+        print()
+    df_y,df_m = transform_df(df) 
     print(df.describe(),"\n",df.head(5))
+    print(df_y.describe(),"\n",df_y.head(5))
+    print(df_m.describe(),"\n",df_m.head(13))
+
     
 
