@@ -1,13 +1,20 @@
 
 import pandas as pd
-
+from sqlalchemy import create_engine
 from pymongo import MongoClient
 import gridfs
-
+import psycopg2
 
 client = MongoClient('mongodb://localhost:27017/')
 db = client['dap_db']
 fs = gridfs.GridFS(db)
+
+
+dbname = "ireland_pricing"
+user = "postgres"
+password = "abcde"
+host = "localhost"
+port = "5432"
 
 def insert_excel_file(filename):
     with open(filename, 'rb') as f:
@@ -46,6 +53,74 @@ def calculate_average(df):
     
     return average_quarterly, average_yearly
 
+
+def create_database_tables(dbname, user, password, host, port):
+    # Connect to the default PostgreSQL database (e.g., "postgres")
+    conn = psycopg2.connect(
+        dbname="postgres",
+        user=user,
+        password=password,
+        host=host,
+        port=port
+    )
+    conn.autocommit = True
+
+    # Create a new database
+    cur = conn.cursor()
+    cur.execute("CREATE DATABASE %s;" % dbname)
+    cur.close()
+    conn.close()
+
+    # Connect to the newly created database
+    conn = psycopg2.connect(
+        dbname=dbname,
+        user=user,
+        password=password,
+        host=host,
+        port=port
+    )
+
+    # Create the "df_merged" table
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE Ire_housing (
+            id SERIAL PRIMARY KEY,
+            Year INTEGER,
+            Quarter INTEGER,
+            City VARCHAR(255),
+            Value NUMERIC,
+            Property_Type VARCHAR(50)
+        );
+    """)
+
+    # Create the "avg_quarterly" table
+    cur.execute("""
+        CREATE TABLE avg_quarterly (
+            id SERIAL PRIMARY KEY,
+            quarter INTEGER,
+            property_type VARCHAR(50),
+            average_value NUMERIC
+        );
+    """)
+
+    # Create the "avg_yearly" table
+    cur.execute("""
+        CREATE TABLE avg_yearly (
+            id SERIAL PRIMARY KEY,
+            year INTEGER,
+            property_type VARCHAR(50),
+            average_value NUMERIC
+        );
+    """)
+
+    # Commit changes and close cursor and connection
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+
+
 #insert_excel_file('105386_55b2433a-3b8a-4c6c-a1fe-c4d324512ad3.xlsx')
 #insert_excel_file('105388_e6ff5cde-36fc-4162-9991-c6041bcb62a6.xlsx')
 
@@ -82,5 +157,9 @@ print(average_quarterly)
 print("\nAverage value for each year:")
 print(average_yearly)
 
+
+print(df_new.columns, average_quarterly.columns, average_yearly.columns)
+
+create_database_tables(dbname, user, password, host, port)
 
 
