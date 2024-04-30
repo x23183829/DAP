@@ -30,6 +30,8 @@ def load_excel_file(filename):
         return df
     else:
         print(f"File '{filename}' not found in MongoDB.")
+
+
 def preprocess_df(df):
     if 'Year' in df.columns:
         df['Quarter'] = pd.PeriodIndex(df['Year'], freq='Q').strftime('%YQ%q')
@@ -43,7 +45,8 @@ def merge_dataframes(df1, df2):
     df1['Property Type'] = 'New'
     df2['Property Type'] = 'Second Hand'
     merged_df = pd.concat([df1, df2], ignore_index=True)
-    
+    merged_df['Value'] = merged_df['Value'] / 190
+   
     return merged_df
 
 
@@ -64,8 +67,10 @@ def create_database_tables(dbname, user, password, host, port):
         port=port
     )
     conn.autocommit = True
-
+    
     cur = conn.cursor()
+    cur.execute(f"DROP DATABASE IF EXISTS {dbname};")
+    
     cur.execute("CREATE DATABASE %s;" % dbname)
     cur.close()
     conn.close()
@@ -186,6 +191,6 @@ print(average_yearly)
 
 print(df_new.columns, average_quarterly.columns, average_yearly.columns)
 
-#create_database_tables(dbname, user, password, host, port)
+create_database_tables(dbname, user, password, host, port)
 
 insert_data_to_tables(df_new, average_quarterly, average_yearly,dbname, user, password, host, port)
