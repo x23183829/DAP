@@ -39,6 +39,13 @@ def merge_dataframes(df1, df2):
     return merged_df
 
 
+
+def calculate_average(df):
+    average_quarterly = df.groupby(['Property Type', 'Quarter'])['Value'].mean().reset_index()
+    average_yearly = df.groupby(['Property Type', 'Year'])['Value'].mean().reset_index()
+    
+    return average_quarterly, average_yearly
+
 #insert_excel_file('105386_55b2433a-3b8a-4c6c-a1fe-c4d324512ad3.xlsx')
 #insert_excel_file('105388_e6ff5cde-36fc-4162-9991-c6041bcb62a6.xlsx')
 
@@ -50,7 +57,7 @@ client.close()
 
 
 print("DataFrame 1:")
-print(df1.columns,df1)
+print(df1.columns)
 print("\nDataFrame 2:")
 print(df2.columns)
 
@@ -67,6 +74,13 @@ print(df2)
 
 df_new = merge_dataframes(df1, df2)
 print(df_new)
+
+average_quarterly, average_yearly = calculate_average(df_new)
+
+print("Average value for each quarter:")
+print(average_quarterly)
+print("\nAverage value for each year:")
+print(average_yearly)
 
 
 
