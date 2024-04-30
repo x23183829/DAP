@@ -4,6 +4,7 @@ from sqlalchemy import create_engine
 from pymongo import MongoClient
 import gridfs
 import psycopg2
+from psycopg2 import sql
 
 client = MongoClient('mongodb://localhost:27017/')
 db = client['dap_db']
@@ -55,7 +56,6 @@ def calculate_average(df):
 
 
 def create_database_tables(dbname, user, password, host, port):
-    # Connect to the default PostgreSQL database (e.g., "postgres")
     conn = psycopg2.connect(
         dbname="postgres",
         user=user,
@@ -65,13 +65,11 @@ def create_database_tables(dbname, user, password, host, port):
     )
     conn.autocommit = True
 
-    # Create a new database
     cur = conn.cursor()
     cur.execute("CREATE DATABASE %s;" % dbname)
     cur.close()
     conn.close()
 
-    # Connect to the newly created database
     conn = psycopg2.connect(
         dbname=dbname,
         user=user,
@@ -80,7 +78,7 @@ def create_database_tables(dbname, user, password, host, port):
         port=port
     )
 
-    # Create the "df_merged" table
+
     cur = conn.cursor()
     cur.execute("""
         CREATE TABLE Ire_housing (
@@ -93,7 +91,6 @@ def create_database_tables(dbname, user, password, host, port):
         );
     """)
 
-    # Create the "avg_quarterly" table
     cur.execute("""
         CREATE TABLE avg_quarterly (
             id SERIAL PRIMARY KEY,
@@ -103,7 +100,6 @@ def create_database_tables(dbname, user, password, host, port):
         );
     """)
 
-    # Create the "avg_yearly" table
     cur.execute("""
         CREATE TABLE avg_yearly (
             id SERIAL PRIMARY KEY,
@@ -113,13 +109,43 @@ def create_database_tables(dbname, user, password, host, port):
         );
     """)
 
-    # Commit changes and close cursor and connection
     conn.commit()
     cur.close()
     conn.close()
 
 
+def insert_data_to_tables(df_merged, avg_quarterly, avg_yearly, dbname, user, password, host, port):
+    conn = psycopg2.connect(
+        dbname=dbname,
+        user=user,
+        password=password,
+        host=host,
+        port=port
+    )
+    cur = conn.cursor()
+    for index, row in df_merged.iterrows():
+        cur.execute(
+            sql.SQL("INSERT INTO Ire_housing (Year, Quarter, City, Value, Property_Type) VALUES (%s, %s, %s, %s, %s);"),
+            (row['Year'], row['Quarter'], row['City'], row['Value'], row['Property Type'])
+        )
+    conn.commit()
 
+    for index, row in avg_quarterly.iterrows():
+        cur.execute(
+            sql.SQL("INSERT INTO avg_quarterly (quarter, property_type, average_value) VALUES (%s, %s, %s);"),
+            (row['Quarter'], row['Property Type'], row['Value'])
+        )
+    conn.commit()
+    
+    for index, row in avg_yearly.iterrows():
+        cur.execute(
+            sql.SQL("INSERT INTO avg_yearly (year, property_type, average_value) VALUES (%s, %s, %s);"),
+            (row['Year'], row['Property Type'], row['Value'])
+        )
+    conn.commit()
+    
+    cur.close()
+    conn.close()
 
 #insert_excel_file('105386_55b2433a-3b8a-4c6c-a1fe-c4d324512ad3.xlsx')
 #insert_excel_file('105388_e6ff5cde-36fc-4162-9991-c6041bcb62a6.xlsx')
@@ -160,6 +186,6 @@ print(average_yearly)
 
 print(df_new.columns, average_quarterly.columns, average_yearly.columns)
 
-create_database_tables(dbname, user, password, host, port)
+#create_database_tables(dbname, user, password, host, port)
 
-
+insert_data_to_tables(df_new, average_quarterly, average_yearly,dbname, user, password, host, port)
