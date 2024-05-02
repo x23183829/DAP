@@ -12,7 +12,6 @@ def load_data_from_postgres(host, port, user, password, dbname, table_names):
     return dfs
 
 
-
 def convert_monthly_to_quarterly(usa_monthly_nsa_df):
     usa_monthly_nsa_df['months'] = pd.to_datetime(usa_monthly_nsa_df['months'], format='%m').dt.month_name()
     usa_monthly_nsa_df['Quarter'] = pd.PeriodIndex(usa_monthly_nsa_df['months'], freq='Q').strftime('%YQ%q')
@@ -136,9 +135,6 @@ def plot_usa_monthly_changes(usa_monthly_nsa_df):
     plt.grid(True)
     plt.savefig('usa_monthly_changes.png')
     plt.show()
-
-
-
 
 
 

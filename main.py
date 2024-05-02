@@ -1,6 +1,5 @@
 import pandas as pd
 import pymongo
-import json
 import psycopg2
 from sqlalchemy import create_engine
 
@@ -8,16 +7,6 @@ from sqlalchemy import create_engine
 MONGODB_URI = "mongodb://localhost:27017/"
 DB_NAME = "DAP"
 COLLECTION_NAME = "files"
-
-def load_data_to_mongodb(input_file, uri, db_name, collection_name):
-    client = pymongo.MongoClient(uri)
-    db = client[db_name]
-    with open(input_file, 'r') as file:
-        json_data = json.load(file)
-    collection = db[collection_name]
-    for doc in json_data:
-        collection.insert_one(doc)
-    client.close()
 
 def load_data_from_mongodb(uri, db_name, collection_name):
     client = pymongo.MongoClient(uri)
@@ -125,10 +114,13 @@ dataframe_columns = [
 ]
 
 if __name__ == "__main__":
-    input_file = "HPI_master.json"
-    #load_data_to_mongodb(input_file, MONGODB_URI, DB_NAME, COLLECTION_NAME)
     df = load_data_from_mongodb(MONGODB_URI, DB_NAME, COLLECTION_NAME)
-    print(df.columns)
+    # for column_name in df.columns:
+    #     unique_values = df[column_name].unique()
+    #     print(f"Unique values in column '{column_name}':")
+    #     print(unique_values)
+    #     print()
+    print(df.columns,df.size)
     df = clean_data(df)
     print(df.columns)
     for column_name in df.columns:
